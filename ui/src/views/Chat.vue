@@ -1,9 +1,9 @@
 <script setup>
 	import ChatArea from '@/components/ChatArea.vue';
 	import Message from '@/components/Message.vue';
-	import {CHAT, SEND} from '@/queries';
-	import {useQuery, useSubscription} from '@vue/apollo-composable';
-	import {computed, nextTick, onUnmounted, ref, watch} from 'vue';
+	import { CHAT, SEND } from '@/queries';
+	import { useQuery, useSubscription } from '@vue/apollo-composable';
+	import {computed, onUnmounted, ref, watch} from 'vue';
 	import {useRoute} from 'vue-router'
 
 	const route = useRoute()
@@ -33,20 +33,18 @@
 	})
 
 
-	const {result, stop} = useSubscription(
+	const {result: sresult, stop} = useSubscription(
 		SEND,
 		() => ({
 			id: chatId.value,
 			model: 'mistral',
 			content: currentContent.value,
 		}),
-		{enabled}
+		{enabled: () => enabled.value}
 	)
-
-
-	watch(result, ({response}) => {
-		if (response) {
-			currentMsg.value.content += response.message.content
+	
+	watch(sresult, ({response}) => {
+		currentMsg.value.content += response.message.content
 		}
 	})
 
@@ -54,15 +52,11 @@
 	function send(input) {
 		currentContent.value = input.content
 		chat.value.messages.push({role: "user", content: input.content})
-		currentMsg.value = {role: "assistant", content: ""}
-		// Toggle the subscription on the next tick
-		enabled.value = false
-		nextTick(() => {
-			enabled.value = true
-		})
+        currentMsg.value = {role: "assistant", content: ""}
+        enabled.value = true
 	}
 
-	onUnmounted(() => {
+		onUnmounted(() => {
 		stop()
 	})
 
