@@ -1,0 +1,31 @@
+{
+  "name": "ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@apollo/client": "^3.13.8",
+    "@tailwindcss/vite": "^4.1.4",
+    "@vue/apollo-composable": "^4.2.2",
+    "@vueuse/core": "^13.1.0",
+    "bootstrap-icons": "^1.11.3",
+    "graphql": "^16.10.0",
+    "graphql-tag": "^2.12.6",
+    "marked": "^15.0.10",
+    "tailwindcss": "^4.1.4",
+    "vue": "^3.5.13",
+    "vue-router": "4"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.16",
+    "@vitejs/plugin-vue": "^5.2.3",
+    "daisyui": "^5.0.28",
+    "vite": "^6.2.4",
+    "vite-plugin-vue-devtools": "^7.7.2"
+  }
+}
