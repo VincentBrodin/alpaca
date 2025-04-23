@@ -19,7 +19,7 @@
 	const chat = ref(null)
 	const currentMsg = ref(null)
 
-	const currentContent = ref('')
+	const currentContent = ref("")
 	const enabled = ref(false)
 
 	const {result: qresult, loading: qloading, error: qerror, refetch: qrefetch} = useQuery(CHAT, () => ({
@@ -52,8 +52,9 @@
 
 
 	function send(input) {
-		currentMsg.value = {role: 'assistant', content: ''}
 		currentContent.value = input.content
+		chat.value.messages.push({role: "user", content: input.content})
+		currentMsg.value = {role: "assistant", content: ""}
 		// Toggle the subscription on the next tick
 		enabled.value = false
 		nextTick(() => {

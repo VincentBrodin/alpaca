@@ -1,10 +1,10 @@
 <script setup>
 	import Navbar from './components/Navbar.vue';
 	import {ApolloClient, createHttpLink, InMemoryCache} from '@apollo/client/core'
+	import {onMounted, provide, watch} from 'vue'
 	import {provideApolloClient, useQuery} from '@vue/apollo-composable';
 	import {CHATS} from './queries';
 	import {store} from './store.js'
-	import {watch} from 'vue';
 	import {useLocalStorage} from '@vueuse/core';
 	import {RouterView} from 'vue-router';
 
@@ -20,6 +20,10 @@
 		link: httpLink,
 		cache,
 	})
+
+	onMounted(() => {
+		provide('wsUrl', 'ws://localhost:1345/query');
+	})
 	provideApolloClient(apolloClient);
 	const {result, loading, error} = useQuery(CHATS);
 	watch(result, (newResult) => {
@@ -28,6 +32,9 @@
 		)
 		store.chats = sortedChats
 	})
+
+
+
 </script>
 
 
