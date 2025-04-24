@@ -10,7 +10,6 @@ query chats {
 }
 `;
 
-
 export const CHAT = gql`
 query chat($id: ID!) {
 	chat(id: $id) {
@@ -27,8 +26,22 @@ query chat($id: ID!) {
 export const SEND = gql`
 subscription send($id: ID!, $model: String!, $content: String!) {
 	send(id: $id, model: $model content: $content) {
-		message {
-			content
-		}
+		content
+		done
 	}
-}`;
+}
+`;
+
+export const CREATE_CHAT = gql`
+mutation create_chat {
+	create_chat {
+		id
+	}
+}
+`;
+
+export const DELETE_CHAT = gql`
+mutation delete_chat($id: ID!) {
+  delete_chat(id: $id)
+}
+`;

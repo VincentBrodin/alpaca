@@ -2,10 +2,6 @@
 
 package models
 
-import (
-	"time"
-)
-
 type Message struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
@@ -18,17 +14,8 @@ type Query struct {
 }
 
 type Response struct {
-	Model              string    `json:"model"`
-	CreatedAt          time.Time `json:"created_at"`
-	Message            *Message  `json:"message"`
-	DoneReason         *string   `json:"done_reason,omitempty"`
-	Done               *bool     `json:"done,omitempty"`
-	TotalDuration      *int      `json:"total_duration,omitempty"`
-	LoadDuration       *int      `json:"load_duration,omitempty"`
-	PromptEvalCount    *int32    `json:"prompt_eval_count,omitempty"`
-	PromptEvalDuration *int      `json:"prompt_eval_duration,omitempty"`
-	EvalCount          *int32    `json:"eval_count,omitempty"`
-	EvalDuration       *int      `json:"eval_duration,omitempty"`
+	Content string `json:"content"`
+	Done    bool   `json:"done"`
 }
 
 type Subscription struct {

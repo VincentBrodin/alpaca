@@ -34,6 +34,17 @@ func (r *mutationResolver) CreateChat(ctx context.Context) (*models.Chat, error)
 	return doc, nil
 }
 
+// DeleteChat is the resolver for the delete_chat field.
+func (r *mutationResolver) DeleteChat(ctx context.Context, id primitive.ObjectID) (bool, error) {
+	filter := bson.M{"_id": id}
+	coll := r.Client.Database("alpaca").Collection("chats")
+	if _, err := coll.DeleteOne(ctx, filter); err != nil {
+		return false, err
+	}
+	return true, nil
+
+}
+
 // Chat is the resolver for the chat field.
 func (r *queryResolver) Chat(ctx context.Context, id primitive.ObjectID) (*models.Chat, error) {
 	filter := bson.M{"_id": id}
@@ -83,7 +94,7 @@ func (r *subscriptionResolver) Send(ctx context.Context, id primitive.ObjectID, 
 			cancel()
 		}()
 		handler := func(response *models.Response) error {
-			log.Println(response.Message.Content)
+			log.Println(response.Content)
 			select {
 			case responses <- response:
 				return nil
@@ -95,19 +106,21 @@ func (r *subscriptionResolver) Send(ctx context.Context, id primitive.ObjectID, 
 		filter := bson.M{"_id": id}
 		coll := r.Client.Database("alpaca").Collection("chats")
 		var chat models.Chat
-		err := coll.FindOne(ctx, filter).Decode(&chat)
+		err := coll.FindOne(bgCtx, filter).Decode(&chat)
 		chat.Model = model
+		// No title
+		if chat.Title == "unamed chat" {
+			chat.Title = content
+		}
 		chat.Messages = append(chat.Messages, &models.Message{Role: "user", Content: content})
-		chat.LastChanged = time.Now().UTC()
-		coll.ReplaceOne(ctx, filter, chat)
 
-		message, err := gollama.Send("http://localhost:11434", &chat, handler)
+		message, err := gollama.Send(&chat, handler)
 		if err != nil {
 			log.Printf("Error in send: %v\n", err)
 		}
 		chat.Messages = append(chat.Messages, message)
 		chat.LastChanged = time.Now().UTC()
-		coll.ReplaceOne(ctx, filter, chat)
+		coll.ReplaceOne(bgCtx, filter, chat)
 	}()
 
 	return responses, nil

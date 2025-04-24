@@ -2,48 +2,76 @@ package gollama
 
 import (
 	"api/graph/models"
-	"bufio"
-	"bytes"
-	"encoding/json"
-	"net/http"
+	"context"
+	"os"
+
+	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
 )
 
 type Handler func(*models.Response) error
 
-func Send(url string, chat *models.Chat, handler Handler) (*models.Message, error) {
-	body, err := json.Marshal(chat)
-	if err != nil {
-		return nil, err
-	}
+func Send(chat *models.Chat, handler Handler) (*models.Message, error) {
 
-	res, err := http.Post(url+"/api/chat",
-		"application/json",
-		bytes.NewBuffer(body),
+	client := openai.NewClient(
+		option.WithAPIKey(os.Getenv("OPEN_AI_API_KEY")),
 	)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
 
-	response := new(models.Response)
+	messages := make([]openai.ChatCompletionMessageParamUnion, len(chat.Messages))
+
+	for i := range messages {
+		if chat.Messages[i].Role == "user" {
+			messages[i] = openai.UserMessage(chat.Messages[i].Content)
+
+		} else if chat.Messages[i].Role == "assistant" {
+			messages[i] = openai.AssistantMessage(chat.Messages[i].Content)
+
+		} else {
+			messages[i] = openai.DeveloperMessage(chat.Messages[i].Content)
+		}
+	}
+
+	stream := client.Chat.Completions.NewStreaming(context.TODO(), openai.ChatCompletionNewParams{
+		Messages: messages,
+		Model:    chat.Model,
+		Seed:     openai.Int(0),
+	})
+
+	acc := openai.ChatCompletionAccumulator{}
+
+	for stream.Next() {
+		response := new(models.Response)
+		chunk := stream.Current()
+		acc.AddChunk(chunk)
+
+		if _, ok := acc.JustFinishedContent(); ok {
+			response.Done = true
+		}
+
+		if _, ok := acc.JustFinishedToolCall(); ok {
+			response.Done = true
+		}
+
+		if _, ok := acc.JustFinishedRefusal(); ok {
+			response.Done = true
+		}
+
+		if len(chunk.Choices) > 0 {
+			content := chunk.Choices[0].Delta.Content
+			response.Content = content
+
+			if err := handler(response); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if stream.Err() != nil {
+		return nil, stream.Err()
+	}
+
 	message := new(models.Message)
-
-	scanner := bufio.NewScanner(res.Body)
-	for scanner.Scan() {
-		line := scanner.Bytes()
-		if err := json.Unmarshal(line, response); err != nil {
-			return nil, err
-		}
-		if err := handler(response); err != nil {
-			return nil, err
-		}
-		message.Role = response.Message.Role
-		message.Content += response.Message.Content
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
+	message.Role = "assistant"
+	message.Content = acc.Choices[0].Message.Content
 	return message, nil
 }
